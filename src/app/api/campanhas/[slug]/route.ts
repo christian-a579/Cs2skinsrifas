@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 interface Params {
   params: {
@@ -8,6 +8,7 @@ interface Params {
 }
 
 export async function GET(_request: Request, { params }: Params) {
+  const prisma = getPrisma();
   const { slug } = params;
 
   const campanha = await prisma.campanha.findUnique({

@@ -5,7 +5,11 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
-function getPrismaClient(): PrismaClient {
+/**
+ * Retorna o cliente Prisma (criado só na primeira chamada, em runtime).
+ * Assim o build na Vercel não tenta conectar ao banco.
+ */
+export function getPrisma(): PrismaClient {
   if (global.prisma) return global.prisma;
   const client = new PrismaClient({ log: ["error", "warn"] });
   if (process.env.NODE_ENV !== "production") {
@@ -13,12 +17,3 @@ function getPrismaClient(): PrismaClient {
   }
   return client;
 }
-
-// Proxy: só cria o client quando for usado (em runtime). No build da Vercel
-// o módulo é carregado mas nenhuma chamada ao banco acontece, evitando erro.
-export const prisma = new Proxy({} as PrismaClient, {
-  get(_, prop) {
-    return (getPrismaClient() as unknown as Record<string, unknown>)[prop as string];
-  },
-});
-

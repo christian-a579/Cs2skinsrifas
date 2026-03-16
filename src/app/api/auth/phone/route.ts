@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
+  const prisma = getPrisma();
   try {
     const { telefone, nome, sobrenome, cpf } = await request.json();
 
