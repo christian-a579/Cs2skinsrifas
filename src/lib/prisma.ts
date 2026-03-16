@@ -18,7 +18,7 @@ function getPrismaClient(): PrismaClient {
 // o módulo é carregado mas nenhuma chamada ao banco acontece, evitando erro.
 export const prisma = new Proxy({} as PrismaClient, {
   get(_, prop) {
-    return (getPrismaClient() as Record<string, unknown>)[prop as string];
+    return (getPrismaClient() as unknown as Record<string, unknown>)[prop as string];
   },
 });
 
