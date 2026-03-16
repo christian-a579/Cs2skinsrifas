@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0f0f0f;
+  --foreground: #fafafa;
+  --accent: #eab308;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+.animate-spin-slow {
+  animation: spin 6s linear infinite;
+}
+
