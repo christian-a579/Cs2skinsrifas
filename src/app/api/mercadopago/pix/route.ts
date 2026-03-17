@@ -70,11 +70,13 @@ export async function POST(request: Request) {
         ? `cliente+${telefoneDigits}@cs2skinsrifas.com.br`
         : `cliente@cs2skinsrifas.com.br`;
 
+  const externalReference = reserva.externalReference || referencia || reservaId;
+
   const payload = {
     transaction_amount: Number(valor),
     description: descricao,
     payment_method_id: "pix",
-    external_reference: reserva.externalReference || referencia || reservaId,
+    external_reference: externalReference,
     payer: {
       email: payerEmail,
       first_name: nome || "Cliente",
@@ -86,6 +88,7 @@ export async function POST(request: Request) {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${ACCESS_TOKEN}`,
+      "X-Idempotency-Key": externalReference || `${reservaId}-${Date.now()}`,
     },
     body: JSON.stringify(payload),
   });
