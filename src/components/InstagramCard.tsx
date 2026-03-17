@@ -2,13 +2,28 @@
 
 import { usePathname } from "next/navigation";
 
-const PLACEHOLDER = "https://instagram.com/SEU_PERFIL_AQUI";
+const PLACEHOLDER = "https://instagram.com/cs2skinsrifas";
+
+function normalizeExternalUrl(raw: string | undefined | null) {
+  const value = raw?.trim();
+  if (!value) return null;
+  if (value === "#") return null;
+
+  // Accept absolute URLs as-is.
+  if (/^https?:\/\//i.test(value)) return value;
+
+  // Common case: user sets `instagram.com/...` without scheme.
+  if (/^[a-z0-9.-]+\.[a-z]{2,}\/?/i.test(value)) return `https://${value}`;
+
+  return null;
+}
 
 export function InstagramCard() {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const url = process.env.NEXT_PUBLIC_INSTAGRAM_URL?.trim();
-  const href = url && url !== PLACEHOLDER ? url : "#";
+  const configured = process.env.NEXT_PUBLIC_INSTAGRAM_URL;
+  const normalized = normalizeExternalUrl(configured);
+  const href = normalized && normalized !== PLACEHOLDER ? normalized : "#";
 
   if (!isHome) return null;
 
@@ -92,8 +107,15 @@ export function InstagramCard() {
         }
 
         @keyframes instagram-pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.4; transform: scale(0.7); }
+          0%,
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.4;
+            transform: scale(0.7);
+          }
         }
 
         @media (max-width: 640px) {

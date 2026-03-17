@@ -3,13 +3,28 @@
 import { usePathname } from "next/navigation";
 
 const PLACEHOLDER =
-  "https://chat.whatsapp.com/https://chat.whatsapp.com/BnA8sqH3llaLL3l3xSR8hh";
+  "https://chat.whatsapp.com/SEU_LINK_AQUI";
+
+function normalizeExternalUrl(raw: string | undefined | null) {
+  const value = raw?.trim();
+  if (!value) return null;
+  if (value === "#") return null;
+
+  if (/^https?:\/\//i.test(value)) return value;
+
+  // Common case: user sets `chat.whatsapp.com/...` or `wa.me/...` without scheme.
+  if (/^[a-z0-9.-]+\.[a-z]{2,}\/?/i.test(value)) return `https://${value}`;
+
+  return null;
+}
 
 export function WhatsAppCommunityCard() {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const url = process.env.NEXT_PUBLIC_WHATSAPP_COMMUNITY_URL?.trim();
-  const href = url && url !== PLACEHOLDER ? url : "#";
+  const configured = process.env.NEXT_PUBLIC_WHATSAPP_COMMUNITY_URL;
+  const normalized = normalizeExternalUrl(configured);
+  const href =
+    normalized && normalized !== PLACEHOLDER ? normalized : "#";
 
   if (!isHome) return null;
 
