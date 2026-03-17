@@ -71,8 +71,11 @@ export function CardCampanha({ campanha, onParticipar }: CardCampanhaProps) {
                 style={{ width: `${percentual}%` }}
               />
             </div>
-            <p className="text-[11px] text-zinc-500">
-              Valor na Steam: R$ {campanha.valorPremio.toFixed(2).replace(".", ",")}
+            <p className="text-xs text-zinc-300">
+              Valor na Steam:{" "}
+              <span className="text-accent font-medium">
+                R$ {campanha.valorPremio.toFixed(2).replace(".", ",")}
+              </span>
             </p>
           </>
         )}
