@@ -42,6 +42,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Reserva não encontrada" }, { status: 404 });
   }
   if (reserva.status !== "reservada") {
+    // Se já foi paga, tratamos como sucesso idempotente (não mostramos erro para o usuário)
+    if (reserva.status === "paga") {
+      return NextResponse.json(
+        {
+          id: reserva.mpPaymentId ?? null,
+          status: "paga",
+          qrCode: null,
+          pixCode: null,
+        },
+        { status: 200 },
+      );
+    }
+
+    // Outros estados (expirada/cancelada) continuam sendo erro
     return NextResponse.json({ error: "Reserva não está mais válida" }, { status: 409 });
   }
   if (reserva.expiresAt.getTime() < Date.now()) {

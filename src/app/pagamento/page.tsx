@@ -90,6 +90,7 @@ export default function PagamentoPage() {
   const [copiado, setCopiado] = useState(false);
   const [mostrarQr, setMostrarQr] = useState(false);
   const [restanteSegundos, setRestanteSegundos] = useState(15 * 60);
+  const [jaNotificouPagamento, setJaNotificouPagamento] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -193,6 +194,47 @@ export default function PagamentoPage() {
       router.push("/");
     }
   }, [router]);
+
+  // Notificação visual quando o pagamento for confirmado
+  useEffect(() => {
+    if (statusReserva === "paga" && !jaNotificouPagamento) {
+      setJaNotificouPagamento(true);
+      if (typeof window !== "undefined") {
+        alert(
+          "Pagamento aprovado! Seus bilhetes foram confirmados e já aparecem em 'Meus bilhetes'.",
+        );
+      }
+    }
+  }, [statusReserva, jaNotificouPagamento]);
+
+  // Atualiza o histórico local ("Meus bilhetes") com os números pagos
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      statusReserva !== "paga" ||
+      !compra ||
+      !compra.numerosPagos ||
+      compra.numerosPagos.length === 0
+    ) {
+      return;
+    }
+
+    const historicoRaw = window.localStorage.getItem("csgorifas:historico");
+    const historico: Compra[] = historicoRaw
+      ? (JSON.parse(historicoRaw) as Compra[])
+      : [];
+
+    const atualizado = historico.map((h) =>
+      h.campanhaId === compra.campanhaId && h.criadaEm === compra.criadaEm
+        ? { ...h, numerosPagos: compra.numerosPagos }
+        : h,
+    );
+
+    window.localStorage.setItem(
+      "csgorifas:historico",
+      JSON.stringify(atualizado),
+    );
+  }, [statusReserva, compra]);
 
   async function copiarCodigo() {
     try {
