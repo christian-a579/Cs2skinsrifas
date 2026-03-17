@@ -30,6 +30,7 @@ export function Header() {
   const [historico, setHistorico] = useState<Participacao[]>([]);
   const [mostrarHistorico, setMostrarHistorico] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [bilhetesRefresh, setBilhetesRefresh] = useState(0);
 
   const loadUsuario = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -69,6 +70,24 @@ export function Header() {
     }
   }, []);
 
+  const loadHistoricoDB = useCallback(
+    async (usuarioId: string) => {
+      try {
+        const res = await fetch(
+          `/api/meus-bilhetes?usuarioId=${encodeURIComponent(usuarioId)}`,
+          { cache: "no-store" },
+        );
+        if (!res.ok) throw new Error("Falha ao carregar bilhetes");
+        const data = (await res.json()) as Participacao[];
+        setHistorico(Array.isArray(data) ? data : []);
+      } catch {
+        // Fallback para localStorage (caso API falhe)
+        loadHistorico();
+      }
+    },
+    [loadHistorico],
+  );
+
   useEffect(() => {
     loadUsuario();
   }, [pathname, loadUsuario]);
@@ -78,6 +97,12 @@ export function Header() {
       loadHistorico();
     }
   }, [usuario, loadHistorico]);
+
+  // Ao abrir o modal, sempre busca a lista no banco pra evitar divergência do localStorage.
+  useEffect(() => {
+    if (!mostrarHistorico || !usuario) return;
+    loadHistoricoDB(usuario.id);
+  }, [mostrarHistorico, usuario, loadHistoricoDB, bilhetesRefresh]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -92,7 +117,13 @@ export function Header() {
     };
 
     const onUpdate = () => loadUsuario();
-    const onHistoricoUpdate = () => loadHistorico();
+    const onHistoricoUpdate = () => {
+      if (mostrarHistorico && usuario) {
+        setBilhetesRefresh((v) => v + 1);
+      } else {
+        loadHistorico();
+      }
+    };
 
     window.addEventListener("storage", onStorage);
     window.addEventListener("csgorifas:user:updated", onUpdate);
@@ -106,7 +137,7 @@ export function Header() {
         onHistoricoUpdate,
       );
     };
-  }, [loadUsuario]);
+  }, [loadUsuario, mostrarHistorico, usuario, loadHistorico]);
 
   function handleLogout() {
     if (typeof window !== "undefined") {
