@@ -122,17 +122,17 @@ export function Header() {
             />
           </div>
         </Link>
-        <div className="flex items-center gap-2">
-          <nav className="hidden sm:flex items-center gap-6 text-sm sm:text-base">
+        <div className="flex items-center gap-3">
+          <nav className="hidden sm:flex items-center gap-3 text-sm sm:text-base">
             <Link
               href="/"
-              className="text-zinc-300 hover:text-white transition"
+              className="text-zinc-300 hover:text-white transition py-1.5 px-3 rounded-full border border-transparent min-h-[34px] box-border inline-flex items-center"
             >
               Campanhas
             </Link>
             <Link
               href="/#ganhadores"
-              className="text-zinc-300 hover:text-white transition"
+              className="text-zinc-300 hover:text-white transition py-1.5 px-3 rounded-full border border-transparent min-h-[34px] box-border inline-flex items-center"
             >
               Ganhadores
             </Link>
@@ -203,7 +203,7 @@ export function Header() {
 
               <button
                 type="button"
-                className="p-2 rounded-md border border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                className="px-2 py-1 rounded-md border border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-xs font-medium min-h-[28px] inline-flex items-center justify-center"
                 aria-label="Abrir menu"
                 onClick={() => setMobileMenuOpen(true)}
               >
@@ -218,32 +218,34 @@ export function Header() {
                 <button
                   type="button"
                   onClick={() => setMostrarHistorico(true)}
-                  className="px-3 py-1.5 rounded-full border border-accent/80 text-accent text-sm font-medium hover:bg-accent hover:text-black transition"
+                  className="px-3 py-1.5 rounded-full border border-accent/80 text-accent text-sm font-medium hover:bg-accent hover:text-black transition min-h-[34px] box-border"
                 >
                   Meus bilhetes
                 </button>
-                <span className="text-sm text-zinc-200 rounded-full border border-accent/60 bg-zinc-900/80 px-4 py-1.5 shadow-[0_0_8px_rgba(234,179,8,0.6)]">
-                  Olá, {usuario.nome || `Usuário ${usuario.telefone.slice(-4)}`}
-                </span>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="px-4 py-1.5 rounded-full border border-red-500/80 text-red-400 text-sm font-medium hover:bg-red-500 hover:text-white transition"
+                  className="group relative text-sm rounded-full border border-accent/60 bg-zinc-900/80 px-4 py-1.5 min-h-[34px] box-border inline-flex items-center justify-center shadow-[0_0_8px_rgba(234,179,8,0.6)] hover:border-red-500/80 hover:bg-red-500/10 transition-colors"
                 >
-                  Logout
+                  <span className="text-zinc-200 whitespace-nowrap group-hover:opacity-0 transition-opacity">
+                    Olá, {usuario.nome || `Usuário ${usuario.telefone.slice(-4)}`}
+                  </span>
+                  <span className="absolute inset-0 flex items-center justify-center text-red-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    Logout
+                  </span>
                 </button>
               </>
             ) : (
               <>
                 <Link
                   href="/login"
-                  className="px-3 py-1.5 rounded-full border border-accent/80 text-accent text-sm font-medium hover:bg-accent hover:text-black transition"
+                  className="px-3 py-1.5 rounded-full border border-accent/80 text-accent text-sm font-medium hover:bg-accent hover:text-black transition min-h-[34px] box-border inline-flex items-center"
                 >
                   Cadastro
                 </Link>
                 <Link
                   href="/entrar"
-                  className="px-3 py-1.5 rounded-full border border-zinc-700 text-zinc-300 text-sm font-medium hover:bg-zinc-700 hover:text-white transition"
+                  className="px-3 py-1.5 rounded-full border border-zinc-700 text-zinc-300 text-sm font-medium hover:bg-zinc-700 hover:text-white transition min-h-[34px] box-border inline-flex items-center"
                 >
                   Login
                 </Link>

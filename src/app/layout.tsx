@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { WhatsAppCommunityCard } from "@/components/WhatsAppCommunityCard";
+import { InstagramCard } from "@/components/InstagramCard";
 
 export const metadata: Metadata = {
   title: "CSGO Rifas – Rifas de Skins CS2",
@@ -20,6 +22,8 @@ export default function RootLayout({
         <main className="flex-1 container mx-auto px-4 py-8">
           {children}
         </main>
+        <WhatsAppCommunityCard />
+        <InstagramCard />
         <Footer />
       </body>
     </html>
