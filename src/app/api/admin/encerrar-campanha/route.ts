@@ -29,7 +29,12 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  if (!Number.isInteger(numeroSorte) || numeroSorte < 0 || numeroSorte > 99) {
+  if (
+    typeof numeroSorte !== "number" ||
+    !Number.isInteger(numeroSorte) ||
+    numeroSorte < 0 ||
+    numeroSorte > 99
+  ) {
     return NextResponse.json(
       { error: "numeroSorte inválido (use 0..99)" },
       { status: 400 },
