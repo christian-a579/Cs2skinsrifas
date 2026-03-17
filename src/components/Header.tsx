@@ -155,7 +155,7 @@ export function Header() {
           <div className="relative h-16 w-16 sm:h-20 sm:w-20 rounded-full overflow-hidden border-2 border-accent/80 shadow-md shadow-accent/40">
             <Image
               src="/img_rifa.png"
-              alt="CSGO Rifas"
+              alt="CS2 Skins Rifas"
               fill
               className="object-cover"
               priority
