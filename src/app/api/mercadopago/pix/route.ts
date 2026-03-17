@@ -34,7 +34,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const reserva = await prisma.reserva.findUnique({ where: { id: reservaId } });
+  const reserva = await prisma.reserva.findUnique({
+    where: { id: reservaId },
+    include: { usuario: true },
+  });
   if (!reserva) {
     return NextResponse.json({ error: "Reserva não encontrada" }, { status: 404 });
   }
@@ -50,9 +53,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Reserva expirada" }, { status: 410 });
   }
 
-  const payerEmail = telefone
-    ? `${telefone.replace(/\D/g, "") || "cliente"}@csgorifas.local`
-    : `cliente@csgorifas.local`;
+  // Mercado Pago valida formato de e-mail. Domínios .local costumam falhar.
+  // Como o cadastro não exige e-mail, geramos um e-mail determinístico a partir do telefone.
+  const telefoneDigits =
+    typeof telefone === "string"
+      ? telefone.replace(/\D/g, "")
+      : reserva.usuario.telefone.replace(/\D/g, "");
+
+  const usuarioEmail = reserva.usuario.email?.trim();
+  const basicEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const payerEmail =
+    usuarioEmail && basicEmailRegex.test(usuarioEmail)
+      ? usuarioEmail
+      : telefoneDigits.length > 0
+        ? `cliente+${telefoneDigits}@cs2skinsrifas.com.br`
+        : `cliente@cs2skinsrifas.com.br`;
 
   const payload = {
     transaction_amount: Number(valor),

@@ -4,7 +4,7 @@ import { getPrisma } from "@/lib/prisma";
 export async function POST(request: Request) {
   const prisma = getPrisma();
   try {
-    const { telefone, nome, sobrenome, cpf } = await request.json();
+    const { telefone, nome, sobrenome, cpf, email } = await request.json();
 
     if (!cpf || typeof cpf !== "string") {
       return NextResponse.json(
@@ -35,7 +35,21 @@ export async function POST(request: Request) {
 
     const nomeTrim = typeof nome === "string" ? nome.trim() : "";
     const sobrenomeTrim = typeof sobrenome === "string" ? sobrenome.trim() : "";
+    const emailTrim = typeof email === "string" ? email.trim() : "";
     const isCadastro = Boolean(nomeTrim && sobrenomeTrim);
+
+    if (isCadastro) {
+      if (!emailTrim) {
+        return NextResponse.json(
+          { message: "E-mail é obrigatório para cadastro." },
+          { status: 400 },
+        );
+      }
+      const basicEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!basicEmailRegex.test(emailTrim)) {
+        return NextResponse.json({ message: "E-mail inválido." }, { status: 400 });
+      }
+    }
 
     if (!isCadastro) {
       // Login simplificado: CPF + telefone
@@ -83,6 +97,7 @@ export async function POST(request: Request) {
           nome: nomeTrim,
           sobrenome: sobrenomeTrim,
           cpf: cpfLimpo,
+          email: emailTrim || usuario.email,
         },
       });
     } else {
@@ -103,6 +118,7 @@ export async function POST(request: Request) {
           sobrenome: sobrenomeTrim,
           cpf: cpfLimpo,
           telefone: telefoneLimpo,
+          email: emailTrim,
         },
       });
     }
@@ -113,6 +129,7 @@ export async function POST(request: Request) {
       sobrenome: usuario.sobrenome,
       cpf: usuario.cpf,
       telefone: usuario.telefone,
+      email: usuario.email,
     });
   } catch (error) {
     console.error("/api/auth/phone error", error);

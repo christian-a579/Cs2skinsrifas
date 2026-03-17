@@ -39,6 +39,7 @@ export function CampanhasSection() {
   const [filtro, setFiltro] = useState<Filtro>("ativa");
   const [selecionada, setSelecionada] = useState<Campanha | null>(null);
   const [campanhas, setCampanhas] = useState<Campanha[]>([]);
+  const [reservando, setReservando] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -161,10 +162,19 @@ export function CampanhasSection() {
       {selecionada && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="relative w-full max-w-md rounded-xl bg-card border border-zinc-800 shadow-xl">
+            {reservando && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60">
+                <div className="h-10 w-10 rounded-full border-2 border-accent border-t-transparent animate-spin mb-3" />
+                <p className="text-xs text-zinc-300">
+                  Reservando suas cotas e preparando o pagamento...
+                </p>
+              </div>
+            )}
             <button
               type="button"
-              onClick={() => setSelecionada(null)}
-              className="absolute right-3 top-3 text-zinc-500 hover:text-white text-xl leading-none"
+              onClick={() => (reservando ? null : setSelecionada(null))}
+              disabled={reservando}
+              className="absolute right-3 top-3 text-zinc-500 hover:text-white text-xl leading-none disabled:opacity-50"
             >
               ×
             </button>
@@ -187,6 +197,7 @@ export function CampanhasSection() {
                 textoBotao="Comprar"
                 onConfirmar={async (quantidade, total) => {
                   if (typeof window === "undefined") return;
+                  if (reservando) return;
                   const storedUser =
                     window.localStorage.getItem("csgorifas:user");
                   if (!storedUser) {
@@ -201,43 +212,48 @@ export function CampanhasSection() {
                   };
                   const criadaEm = new Date().toISOString();
 
-                  // Reserva as cotas no backend (15 min)
-                  const res = await fetch(
-                    `/api/campanhas/${selecionada.slug}/reservar`,
-                    {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ quantidade, usuarioId: u.id }),
-                    },
-                  );
+                  try {
+                    setReservando(true);
+                    // Reserva as cotas no backend (15 min)
+                    const res = await fetch(
+                      `/api/campanhas/${selecionada.slug}/reservar`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ quantidade, usuarioId: u.id }),
+                      },
+                    );
 
-                  const data = (await res.json().catch(() => null)) as any;
-                  if (!res.ok) {
-                    const msg = data?.error || "Falha ao reservar cotas";
-                    alert(msg);
-                    return;
+                    const data = (await res.json().catch(() => null)) as any;
+                    if (!res.ok) {
+                      const msg = data?.error || "Falha ao reservar cotas";
+                      alert(msg);
+                      return;
+                    }
+
+                    const compra = {
+                      campanhaId: selecionada.id,
+                      campanhaSlug: selecionada.slug,
+                      campanhaNome: selecionada.nome,
+                      precoTitulo: selecionada.precoTitulo,
+                      quantidade,
+                      total: data.total ?? total,
+                      criadaEm,
+                      reservaId: data.reservaId as string,
+                      expiresAt: data.expiresAt as string,
+                      numerosReservados: data.numeros as number[],
+                    };
+
+                    window.localStorage.setItem(
+                      "csgorifas:compra",
+                      JSON.stringify(compra),
+                    );
+
+                    setSelecionada(null);
+                    router.push("/pagamento");
+                  } finally {
+                    setReservando(false);
                   }
-
-                  const compra = {
-                    campanhaId: selecionada.id,
-                    campanhaSlug: selecionada.slug,
-                    campanhaNome: selecionada.nome,
-                    precoTitulo: selecionada.precoTitulo,
-                    quantidade,
-                    total: data.total ?? total,
-                    criadaEm,
-                    reservaId: data.reservaId as string,
-                    expiresAt: data.expiresAt as string,
-                    numerosReservados: data.numeros as number[],
-                  };
-
-                  window.localStorage.setItem(
-                    "csgorifas:compra",
-                    JSON.stringify(compra),
-                  );
-
-                  setSelecionada(null);
-                  router.push("/pagamento");
                 }}
               />
             </div>

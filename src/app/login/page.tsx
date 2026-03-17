@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [sobrenome, setSobrenome] = useState("");
   const [cpf, setCpf] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [email, setEmail] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -19,6 +20,7 @@ export default function LoginPage() {
     const sobrenomeTrim = sobrenome.trim();
     const cpfLimpo = cpf.replace(/\D/g, "");
     const telefoneLimpo = telefone.replace(/\D/g, "");
+    const emailTrim = email.trim();
 
     if (!nomeTrim) {
       setErro("Nome é obrigatório.");
@@ -40,6 +42,16 @@ export default function LoginPage() {
       return;
     }
 
+    if (!emailTrim) {
+      setErro("E-mail é obrigatório.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
+      setErro("E-mail inválido.");
+      return;
+    }
+
     setErro(null);
     setCarregando(true);
 
@@ -52,6 +64,7 @@ export default function LoginPage() {
           sobrenome: sobrenomeTrim,
           cpf: cpfLimpo,
           telefone: telefoneLimpo,
+          email: emailTrim,
         }),
       });
 
@@ -76,7 +89,7 @@ export default function LoginPage() {
     <div className="max-w-md mx-auto bg-card border border-zinc-800 rounded-xl p-6">
       <h1 className="text-2xl font-bold text-white mb-2">Cadastro</h1>
       <p className="text-sm text-zinc-400 mb-6">
-        Informe nome, sobrenome, CPF e telefone para criar sua conta.
+        Informe nome, sobrenome, CPF, telefone e e-mail para criar sua conta.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -114,6 +127,18 @@ export default function LoginPage() {
             onChange={(e) => setCpf(e.target.value)}
             className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-accent"
             placeholder="000.000.000-00"
+            required
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="block text-sm text-zinc-300">E-mail</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-accent"
+            placeholder="seuemail@exemplo.com"
             required
           />
         </div>
