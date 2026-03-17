@@ -6,18 +6,19 @@ import { WhatsAppCommunityCard } from "@/components/WhatsAppCommunityCard";
 import { InstagramCard } from "@/components/InstagramCard";
 
 export const metadata: Metadata = {
-  title: "CS2 Skins Rifas – Rifas de Skins CS2",
-  description: "Participe de rifas de skins de Counter-Strike 2. Escolha sua sorte!",
+  title: "CS2 Rifas de Skins ",
+  description:
+    "Participe de rifas de skins de Counter-Strike 2. Escolha sua sorte!",
   icons: [{ rel: "icon", url: "/img_rifa.png" }],
   openGraph: {
-    title: "CS2 Skins Rifas – Rifas de Skins CS2",
+    title: "CS2 Rifas de Skins",
     description:
       "Participe de rifas de skins de Counter-Strike 2. Escolha sua sorte!",
     images: [{ url: "/img_rifa.png" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "CS2 Skins Rifas – Rifas de Skins CS2",
+    title: "CS2 Rifas de Skins",
     description:
       "Participe de rifas de skins de Counter-Strike 2. Escolha sua sorte!",
     images: ["/img_rifa.png"],
@@ -33,9 +34,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className="min-h-screen flex flex-col antialiased">
         <Header />
-        <main className="flex-1 container mx-auto px-4 py-8">
-          {children}
-        </main>
+        <main className="flex-1 container mx-auto px-4 py-8">{children}</main>
         <WhatsAppCommunityCard />
         <InstagramCard />
         <Footer />
