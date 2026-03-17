@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { getPrisma } from "@/lib/prisma";
 
 const ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
 
 export async function POST(request: Request) {
+  const prisma = getPrisma();
   if (!ACCESS_TOKEN) {
     return NextResponse.json(
       { error: "MERCADOPAGO_ACCESS_TOKEN não configurado" },
@@ -16,19 +18,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Payload inválido" }, { status: 400 });
   }
 
-  const { valor, descricao, referencia, nome, telefone } = body as {
+  const { valor, descricao, referencia, nome, telefone, reservaId } = body as {
     valor?: number;
     descricao?: string;
     referencia?: string;
     nome?: string;
     telefone?: string;
+    reservaId?: string;
   };
 
-  if (!valor || !descricao) {
+  if (!valor || !descricao || !reservaId) {
     return NextResponse.json(
-      { error: "Campos obrigatórios: valor, descricao" },
+      { error: "Campos obrigatórios: valor, descricao, reservaId" },
       { status: 400 },
     );
+  }
+
+  const reserva = await prisma.reserva.findUnique({ where: { id: reservaId } });
+  if (!reserva) {
+    return NextResponse.json({ error: "Reserva não encontrada" }, { status: 404 });
+  }
+  if (reserva.status !== "reservada") {
+    return NextResponse.json({ error: "Reserva não está mais válida" }, { status: 409 });
+  }
+  if (reserva.expiresAt.getTime() < Date.now()) {
+    await prisma.reserva.update({ where: { id: reservaId }, data: { status: "expirada" } });
+    await prisma.titulo.updateMany({
+      where: { reservaId, status: "reservado" },
+      data: { status: "expirado" },
+    });
+    return NextResponse.json({ error: "Reserva expirada" }, { status: 410 });
   }
 
   const payerEmail = telefone
@@ -39,7 +58,7 @@ export async function POST(request: Request) {
     transaction_amount: Number(valor),
     description: descricao,
     payment_method_id: "pix",
-    external_reference: referencia,
+    external_reference: reserva.externalReference || referencia || reservaId,
     payer: {
       email: payerEmail,
       first_name: nome || "Cliente",
@@ -73,6 +92,14 @@ export async function POST(request: Request) {
   }
 
   const transactionData = data?.point_of_interaction?.transaction_data || null;
+
+  // Salva o payment id e status inicial
+  await prisma.reserva.update({
+    where: { id: reservaId },
+    data: {
+      mpPaymentId: String(data.id),
+    },
+  });
 
   return NextResponse.json({
     id: data.id,

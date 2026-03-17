@@ -22,6 +22,7 @@ model Campanha {
   updatedAt       DateTime @updatedAt
 
   titulos   Titulo[]
+  reservas  Reserva[]
   ganhador  Ganhador?
 }
 
@@ -35,13 +36,37 @@ model Usuario {
   createdAt DateTime @default(now())
 
   titulos   Titulo[]
+  reservas  Reserva[]
   ganhadores Ganhador[]
 }
 
-model Titulo {
-  id          String   @id @default(cuid())
-  numeroSorte Int
-  createdAt   DateTime @default(now())
+enum StatusReserva {
+  reservada
+  paga
+  expirada
+  cancelada
+}
+
+enum StatusTitulo {
+  reservado
+  pago
+  expirado
+  cancelado
+}
+
+model Reserva {
+  id          String        @id @default(cuid())
+  status      StatusReserva @default(reservada)
+  quantidade  Int
+  total       Float
+  expiresAt   DateTime
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Integração Mercado Pago
+  mpPaymentId   String? @unique
+  mpPreferenceId String?
+  externalReference String? @unique
 
   campanha   Campanha @relation(fields: [campanhaId], references: [id], onDelete: Cascade)
   campanhaId String
@@ -49,7 +74,32 @@ model Titulo {
   usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   usuarioId String
 
+  titulos   Titulo[]
+
+  @@index([campanhaId, status, expiresAt])
+  @@index([usuarioId, createdAt])
+}
+
+model Titulo {
+  id          String   @id @default(cuid())
+  numeroSorte Int
+  createdAt   DateTime @default(now())
+  status      StatusTitulo @default(reservado)
+  expiresAt   DateTime?
+
+  campanha   Campanha @relation(fields: [campanhaId], references: [id], onDelete: Cascade)
+  campanhaId String
+
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuarioId String
+
+  reserva   Reserva? @relation(fields: [reservaId], references: [id], onDelete: SetNull)
+  reservaId String?
+
   ganhador  Ganhador?
+
+  @@unique([campanhaId, numeroSorte])
+  @@index([campanhaId, status, expiresAt])
 }
 
 model Ganhador {

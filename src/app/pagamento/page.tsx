@@ -16,7 +16,10 @@ interface Compra {
   quantidade: number;
   total: number;
   criadaEm: string;
-  numeros?: number[];
+  reservaId: string;
+  expiresAt?: string;
+  numerosReservados?: number[];
+  numerosPagos?: number[];
 }
 
 function mascararTelefone(telefone: string) {
@@ -40,6 +43,7 @@ async function criarPagamentoMercadoPagoPix(compra: Compra, usuario: Usuario) {
       referencia: `${compra.campanhaId}-${compra.criadaEm}`,
       nome: usuario.nome,
       telefone: usuario.telefone,
+      reservaId: compra.reservaId,
     }),
   });
 
@@ -76,13 +80,16 @@ export default function PagamentoPage() {
   const router = useRouter();
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [compra, setCompra] = useState<Compra | null>(null);
+  const [statusReserva, setStatusReserva] = useState<
+    "reservada" | "paga" | "expirada" | "cancelada" | null
+  >(null);
   const [codigoPix, setCodigoPix] = useState("");
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
   const [mpErro, setMpErro] = useState<string | null>(null);
   const [carregandoMp, setCarregandoMp] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const [mostrarQr, setMostrarQr] = useState(false);
-  const [restanteSegundos, setRestanteSegundos] = useState(600);
+  const [restanteSegundos, setRestanteSegundos] = useState(15 * 60);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -100,6 +107,7 @@ export default function PagamentoPage() {
       const c = JSON.parse(storedCompra) as Compra;
       setUsuario(u);
       setCompra(c);
+      setStatusReserva("reservada");
       setCodigoPix(
         `0002PIXCSGORIFAS-${btoa(`${c.campanhaId}-${u.telefone}-${c.total}-${c.criadaEm}`).slice(0, 40)}`,
       );
@@ -142,11 +150,25 @@ export default function PagamentoPage() {
         }
       }
 
-      const criada = new Date(c.criadaEm).getTime();
-      const agora = Date.now();
-      const diff = Math.floor((agora - criada) / 1000);
-      const remaining = Math.max(0, 600 - diff);
+      const expiresAtMs = c.expiresAt ? new Date(c.expiresAt).getTime() : 0;
+      const remaining = expiresAtMs
+        ? Math.max(0, Math.floor((expiresAtMs - Date.now()) / 1000))
+        : 15 * 60;
       setRestanteSegundos(remaining);
+
+      const poll = window.setInterval(async () => {
+        try {
+          const r = await fetch(`/api/reservas/${c.reservaId}`, { cache: "no-store" });
+          const j = await r.json();
+          if (!r.ok) return;
+          setStatusReserva(j.status);
+          if (j.status === "paga") {
+            setCompra((prev) => (prev ? { ...prev, numerosPagos: j.numerosPagos } : prev));
+          }
+        } catch {
+          // ignore
+        }
+      }, 3000);
 
       const interval = window.setInterval(() => {
         setRestanteSegundos((prev) => {
@@ -160,6 +182,7 @@ export default function PagamentoPage() {
 
       return () => {
         window.clearInterval(interval);
+        window.clearInterval(poll);
         const w = window as any;
         if (w.paymentBrickController) {
           w.paymentBrickController.unmount();
@@ -338,9 +361,9 @@ export default function PagamentoPage() {
           <p className="font-semibold text-white text-xs mb-1">
             Números da rifa
           </p>
-          {compra.numeros && compra.numeros.length > 0 ? (
+          {compra.numerosPagos && compra.numerosPagos.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
-              {compra.numeros.map((n) => (
+              {compra.numerosPagos.map((n) => (
                 <span
                   key={n}
                   className="px-2 py-1 rounded-md bg-zinc-900 border border-accent/40 text-[11px] text-accent font-semibold"
@@ -349,6 +372,10 @@ export default function PagamentoPage() {
                 </span>
               ))}
             </div>
+          ) : statusReserva === "expirada" ? (
+            <p className="text-[11px] text-red-300">
+              Reserva expirada. Volte para a campanha e tente novamente.
+            </p>
           ) : (
             <p className="text-[11px] text-zinc-500">
               Os números da sua rifa serão liberados aqui assim que o pagamento

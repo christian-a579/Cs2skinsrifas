@@ -214,7 +214,7 @@ export function CampanhasSection() {
                 precoTitulo={selecionada.precoTitulo}
                 pacotes={[1, 3, 5, 10, 15, 20]}
                 textoBotao="Comprar"
-                onConfirmar={(quantidade, total) => {
+                onConfirmar={async (quantidade, total) => {
                   if (typeof window === "undefined") return;
                   const storedUser =
                     window.localStorage.getItem("csgorifas:user");
@@ -223,13 +223,34 @@ export function CampanhasSection() {
                     return;
                   }
 
+                  const u = JSON.parse(storedUser) as { id: string; nome: string; telefone: string };
+                  const criadaEm = new Date().toISOString();
+
+                  // Reserva as cotas no backend (15 min)
+                  const res = await fetch(`/api/campanhas/${selecionada.slug}/reservar`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ quantidade, usuarioId: u.id }),
+                  });
+
+                  const data = (await res.json().catch(() => null)) as any;
+                  if (!res.ok) {
+                    const msg = data?.error || "Falha ao reservar cotas";
+                    alert(msg);
+                    return;
+                  }
+
                   const compra = {
                     campanhaId: selecionada.id,
+                    campanhaSlug: selecionada.slug,
                     campanhaNome: selecionada.nome,
                     precoTitulo: selecionada.precoTitulo,
                     quantidade,
-                    total,
-                    criadaEm: new Date().toISOString(),
+                    total: data.total ?? total,
+                    criadaEm,
+                    reservaId: data.reservaId as string,
+                    expiresAt: data.expiresAt as string,
+                    numerosReservados: data.numeros as number[],
                   };
 
                   window.localStorage.setItem(
