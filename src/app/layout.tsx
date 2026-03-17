@@ -9,19 +9,19 @@ export const metadata: Metadata = {
   title: "CS2 Rifas de Skins ",
   description:
     "Participe de rifas de skins de Counter-Strike 2. Escolha sua sorte!",
-  icons: [{ rel: "icon", url: "/img_rifa.png" }],
+  icons: [{ rel: "icon", url: "/img_rifa-fotor-20260317152722.png" }],
   openGraph: {
     title: "CS2 Rifas de Skins",
     description:
       "Participe de rifas de skins de Counter-Strike 2. Escolha sua sorte!",
-    images: [{ url: "/img_rifa.png" }],
+    images: [{ url: "/img_rifa-fotor-20260317152722.png" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "CS2 Rifas de Skins",
     description:
       "Participe de rifas de skins de Counter-Strike 2. Escolha sua sorte!",
-    images: ["/img_rifa.png"],
+    images: ["/img_rifa-fotor-20260317152722.png"],
   },
 };
 
