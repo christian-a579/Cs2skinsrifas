@@ -15,6 +15,7 @@ export function SeletorTitulos({
   textoBotao = "Quero participar",
   onConfirmar,
 }: SeletorTitulosProps) {
+  const MAX_QUANTIDADE = 100;
   const [quantidade, setQuantidade] = useState(1);
   const totalValor = precoTitulo * quantidade;
   const totalFormatado = totalValor.toFixed(2);
@@ -26,7 +27,9 @@ export function SeletorTitulos({
           <button
             key={num}
             type="button"
-            onClick={() => setQuantidade(num)}
+            onClick={() =>
+              setQuantidade(() => Math.min(MAX_QUANTIDADE, Math.max(1, num)))
+            }
             className={`py-3 px-4 rounded-lg border font-medium transition ${
               quantidade === num
                 ? "border-accent bg-accent/10 text-accent"
@@ -47,7 +50,9 @@ export function SeletorTitulos({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setQuantidade((q) => Math.max(1, q - 1))}
+            onClick={() =>
+              setQuantidade((q) => Math.max(1, Math.min(MAX_QUANTIDADE, q - 1)))
+            }
             className="h-10 w-10 rounded-full border border-zinc-700 text-lg text-zinc-200 hover:border-zinc-500 hover:bg-zinc-800 transition"
           >
             −
@@ -57,7 +62,11 @@ export function SeletorTitulos({
           </div>
           <button
             type="button"
-            onClick={() => setQuantidade((q) => q + 1)}
+            onClick={() =>
+              setQuantidade((q) =>
+                Math.min(MAX_QUANTIDADE, Math.max(1, q + 1)),
+              )
+            }
             className="h-10 w-10 rounded-full border border-zinc-700 text-lg text-zinc-200 hover:border-zinc-500 hover:bg-zinc-800 transition"
           >
             +
@@ -66,7 +75,13 @@ export function SeletorTitulos({
 
         <button
           type="button"
-          onClick={() => onConfirmar?.(quantidade, totalValor)}
+          onClick={() =>
+            onConfirmar?.(
+              Math.min(MAX_QUANTIDADE, Math.max(1, quantidade)),
+              precoTitulo *
+                Math.min(MAX_QUANTIDADE, Math.max(1, quantidade)),
+            )
+          }
           className="flex-1 py-3 bg-accent text-black font-semibold rounded-lg hover:bg-yellow-500 transition text-sm sm:text-base"
         >
           {textoBotao} — R$ {totalFormatado}
