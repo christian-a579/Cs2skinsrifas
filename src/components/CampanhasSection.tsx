@@ -40,7 +40,35 @@ export function CampanhasSection() {
   const [selecionada, setSelecionada] = useState<Campanha | null>(null);
   const [campanhas, setCampanhas] = useState<Campanha[]>([]);
   const [reservando, setReservando] = useState(false);
+  const [disponiveis, setDisponiveis] = useState<number>(100);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!selecionada || selecionada.status !== "ativa") {
+      setDisponiveis(100);
+      return;
+    }
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch(
+          `/api/campanhas/${encodeURIComponent(selecionada.slug)}/disponiveis`,
+          { cache: "no-store" },
+        );
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { disponiveis?: number };
+        if (!cancelled && typeof data?.disponiveis === "number") {
+          setDisponiveis(Math.max(0, data.disponiveis));
+        }
+      } catch {
+        if (!cancelled) setDisponiveis(100);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [selecionada?.id, selecionada?.slug, selecionada?.status]);
 
   useEffect(() => {
     let cancelled = false;
@@ -194,6 +222,7 @@ export function CampanhasSection() {
               <SeletorTitulos
                 precoTitulo={selecionada.precoTitulo}
                 pacotes={[1, 3, 5, 10, 15, 20]}
+                maxQuantidade={disponiveis}
                 textoBotao="Comprar"
                 onConfirmar={async (quantidade, total) => {
                   if (typeof window === "undefined") return;
