@@ -7,10 +7,16 @@ interface CardCampanhaProps {
 }
 
 export function CardCampanha({ campanha, onParticipar }: CardCampanhaProps) {
-  const percentual = Math.round(
-    (campanha.titulosVendidos / campanha.totalTitulos) * 100
-  );
+  const percentual =
+    campanha.totalTitulos > 0
+      ? Math.min(
+          100,
+          Math.floor((campanha.titulosVendidos / campanha.totalTitulos) * 100),
+        )
+      : 0;
   const isConcluida = campanha.status === "concluida";
+  const isEmBreve = campanha.status === "em_breve";
+  const podeParticipar = !isConcluida && !isEmBreve;
   const fundo = "/fundo.png"; // layout padrão do card (escudo, etc.)
   const arma = campanha.imagemUrl; // png da arma específica (opcional)
   const scale = campanha.displayScale ?? 1.1;
@@ -51,31 +57,37 @@ export function CardCampanha({ campanha, onParticipar }: CardCampanhaProps) {
         <h2 className="font-semibold text-sm text-white line-clamp-2" title={campanha.nome}>
           {campanha.nome}
         </h2>
-        <div className="flex items-center justify-between text-xs text-zinc-400">
-          <span>Progresso: {percentual}%</span>
-          <span className="text-accent font-semibold">
-            R$ {campanha.precoTitulo.toFixed(2)}
-          </span>
-        </div>
-        <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-accent rounded-full transition-all"
-            style={{ width: `${percentual}%` }}
-          />
-        </div>
+        {!isEmBreve && (
+          <>
+            <div className="flex items-center justify-between text-xs text-zinc-400">
+              <span>Progresso: {percentual}%</span>
+              <span className="text-accent font-semibold">
+                R$ {campanha.precoTitulo.toFixed(2)}
+              </span>
+            </div>
+            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-accent rounded-full transition-all"
+                style={{ width: `${percentual}%` }}
+              />
+            </div>
+          </>
+        )}
         <button
           type="button"
-          disabled={isConcluida}
-          onClick={isConcluida ? undefined : onParticipar}
+          disabled={!podeParticipar}
+          onClick={podeParticipar ? onParticipar : undefined}
           className={`mt-auto block w-full py-2.5 rounded font-medium text-center text-sm transition ${
-            isConcluida
+            !podeParticipar
               ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
               : "bg-accent text-black hover:bg-yellow-500"
           }`}
         >
           {isConcluida
             ? `CONCLUÍDO ${campanha.dataConclusao ?? ""}`
-            : "Quero participar"}
+            : isEmBreve
+              ? "EM BREVE"
+              : "Quero participar"}
         </button>
       </div>
     </article>

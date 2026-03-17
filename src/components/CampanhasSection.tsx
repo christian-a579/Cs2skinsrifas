@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CardCampanha } from "./CardCampanha";
 import { SeletorTitulos } from "./SeletorTitulos";
@@ -8,84 +8,66 @@ import type { Campanha } from "@/lib/types";
 
 type Filtro = "todas" | "ativa" | "concluida" | "em_breve";
 
-const CAMPANHAS_FIXAS: Campanha[] = [
+const SLUG_CAMPANHA_ATIVA = "Usp - Kill Confirmed";
+
+const CAMPANHAS_EM_BREVE: Campanha[] = [
   {
-    id: "1",
-    slug: "Usp - Kill Confirmed",
-    nome: "USP | Kill Confirmed (Testado em Campo)",
-    valorPremio: 382.33,
-    precoTitulo: 3.8,
-    totalTitulos: 100,
-    titulosVendidos: 28,
-    status: "ativa",
-    imagemUrl: "/usp_kill_confirmed_valve.png",
-  },
-  {
-    id: "2",
-    slug: "m9-doppler",
-    nome: "Baioneta - M9 | Doppler (StatTrak) (Nova de Fabrica)",
+    id: "em-breve-1",
+    slug: "bayoneta - autotronic",
+    nome: "Baioneta - | Autotronic (Testado em Campo)",
     valorPremio: 420,
     precoTitulo: 4.2,
-    totalTitulos: 120,
-    titulosVendidos: 60,
+    totalTitulos: 100,
+    titulosVendidos: 0,
     status: "em_breve",
-    imagemUrl: "/M9_doppler.png",
+    imagemUrl: "/baioneta_autotronic.png",
   },
   {
-    id: "3",
-    slug: "ak-47-assimov",
-    nome: "AK-47 | Assimov (Nova de Fabrica)",
-    valorPremio: 510.5,
-    precoTitulo: 5.1,
-    totalTitulos: 90,
-    titulosVendidos: 90,
-    status: "concluida",
-    imagemUrl: "/ak_assimov_valve.png",
-    dataConclusao: "11/03/2026 às 11:47",
-  },
-  {
-    id: "4",
-    slug: "awp-descarga eletrica",
-    nome: "AWP | Descarga Elétrica (Nova de Fabrica)",
-    valorPremio: 299.9,
-    precoTitulo: 2.99,
-    totalTitulos: 150,
-    titulosVendidos: 45,
-    status: "ativa",
-    imagemUrl: "/awp_descarga eletrica.png",
-  },
-  {
-    id: "5",
-    slug: "karambit-degrade",
-    nome: "Karambit | Degrade (Nova de Fabrica)",
-    valorPremio: 120.5,
-    precoTitulo: 1.8,
-    totalTitulos: 80,
-    titulosVendidos: 10,
-    status: "em_breve",
-    imagemUrl: "/karambit_degrade_valve.png",
-  },
-  {
-    id: "6",
-    slug: "ak-redline",
-    nome: "AK-47 | RedLine (Nova de Fabrica)",
+    id: "em-breve-2",
+    slug: "talon-revestimento",
+    nome: "Talon | Revestimento Enferrujado (Testado em Campo)",
     valorPremio: 150.0,
     precoTitulo: 2.1,
-    totalTitulos: 70,
-    titulosVendidos: 5,
-    status: "ativa",
-    imagemUrl: "/akredline_valve.png",
+    totalTitulos: 100,
+    titulosVendidos: 0,
+    status: "em_breve",
+    imagemUrl: "/talon_revestimento.png",
   },
 ];
 
 export function CampanhasSection() {
   const [filtro, setFiltro] = useState<Filtro>("ativa");
   const [selecionada, setSelecionada] = useState<Campanha | null>(null);
+  const [campanhas, setCampanhas] = useState<Campanha[]>([]);
   const router = useRouter();
 
-  const campanhasFiltradas = CAMPANHAS_FIXAS.filter((c) =>
-    filtro === "todas" ? true : c.status === filtro,
-  );
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/campanhas", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as Campanha[];
+        if (!cancelled && Array.isArray(data)) {
+          setCampanhas(data);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const campanhasFiltradas = useMemo(() => {
+    if (filtro === "em_breve") return CAMPANHAS_EM_BREVE;
+    const base = campanhas.filter((c) => c.slug === SLUG_CAMPANHA_ATIVA);
+    return base.filter((c) =>
+      filtro === "todas" ? true : c.status === filtro,
+    );
+  }, [campanhas, filtro]);
 
   return (
     <section className="mb-16">
@@ -117,17 +99,6 @@ export function CampanhasSection() {
           }`}
         >
           Ativas
-        </button>
-        <button
-          type="button"
-          onClick={() => setFiltro("concluida")}
-          className={`px-4 py-2 rounded-full text-sm font-medium border transition ${
-            filtro === "concluida"
-              ? "bg-accent text-black border-accent"
-              : "border-zinc-700 text-zinc-300 hover:border-zinc-500"
-          }`}
-        >
-          Concluídas
         </button>
         <button
           type="button"
@@ -223,15 +194,22 @@ export function CampanhasSection() {
                     return;
                   }
 
-                  const u = JSON.parse(storedUser) as { id: string; nome: string; telefone: string };
+                  const u = JSON.parse(storedUser) as {
+                    id: string;
+                    nome: string;
+                    telefone: string;
+                  };
                   const criadaEm = new Date().toISOString();
 
                   // Reserva as cotas no backend (15 min)
-                  const res = await fetch(`/api/campanhas/${selecionada.slug}/reservar`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ quantidade, usuarioId: u.id }),
-                  });
+                  const res = await fetch(
+                    `/api/campanhas/${selecionada.slug}/reservar`,
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ quantidade, usuarioId: u.id }),
+                    },
+                  );
 
                   const data = (await res.json().catch(() => null)) as any;
                   if (!res.ok) {

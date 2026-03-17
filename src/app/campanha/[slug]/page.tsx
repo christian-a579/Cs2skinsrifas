@@ -31,9 +31,13 @@ export default async function CampanhaPage({
 
   if (!campanha) notFound();
 
-  const percentual = Math.round(
-    (campanha.titulosVendidos / campanha.totalTitulos) * 100
-  );
+  const percentual =
+    campanha.totalTitulos > 0
+      ? Math.min(
+          100,
+          Math.floor((campanha.titulosVendidos / campanha.totalTitulos) * 100),
+        )
+      : 0;
   const isConcluida = campanha.status === "concluida";
 
   return (
