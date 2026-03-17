@@ -86,16 +86,25 @@ export function Header() {
       if (event.key === "csgorifas:user") {
         loadUsuario();
       }
+      if (event.key === "csgorifas:historico") {
+        loadHistorico();
+      }
     };
 
     const onUpdate = () => loadUsuario();
+    const onHistoricoUpdate = () => loadHistorico();
 
     window.addEventListener("storage", onStorage);
     window.addEventListener("csgorifas:user:updated", onUpdate);
+    window.addEventListener("csgorifas:historico:updated", onHistoricoUpdate);
 
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("csgorifas:user:updated", onUpdate);
+      window.removeEventListener(
+        "csgorifas:historico:updated",
+        onHistoricoUpdate,
+      );
     };
   }, [loadUsuario]);
 

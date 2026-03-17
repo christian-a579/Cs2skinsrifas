@@ -146,7 +146,7 @@ export default function PagamentoPage() {
         if (!existe) {
           window.localStorage.setItem(
             "csgorifas:historico",
-            JSON.stringify([...historico, c]),
+            JSON.stringify([...historico, { ...c, numeros: undefined }]),
           );
         }
       }
@@ -225,8 +225,12 @@ export default function PagamentoPage() {
       : [];
 
     const atualizado = historico.map((h) =>
-      h.campanhaId === compra.campanhaId && h.criadaEm === compra.criadaEm
-        ? { ...h, numerosPagos: compra.numerosPagos }
+      // Atualiza pelo `reservaId` quando existir (mais confiável).
+      // Fallback para `campanhaId + criadaEm`.
+      "reservaId" in h && (h as any).reservaId === compra.reservaId
+        ? { ...h, numeros: compra.numerosPagos }
+        : h.campanhaId === compra.campanhaId && h.criadaEm === compra.criadaEm
+          ? { ...h, numeros: compra.numerosPagos }
         : h,
     );
 
@@ -234,6 +238,7 @@ export default function PagamentoPage() {
       "csgorifas:historico",
       JSON.stringify(atualizado),
     );
+    window.dispatchEvent(new Event("csgorifas:historico:updated"));
   }, [statusReserva, compra]);
 
   async function copiarCodigo() {
