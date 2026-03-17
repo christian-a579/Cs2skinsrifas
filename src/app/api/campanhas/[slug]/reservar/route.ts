@@ -41,6 +41,14 @@ export async function POST(request: Request, { params }: Params) {
   if (!campanha) {
     return NextResponse.json({ error: "Campanha não encontrada" }, { status: 404 });
   }
+  if (campanha.status !== "ativa") {
+    return NextResponse.json({ error: "Campanha não está ativa" }, { status: 409 });
+  }
+
+  const usuario = await prisma.usuario.findUnique({ where: { id: usuarioId } });
+  if (!usuario) {
+    return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+  }
 
   // Requisito do usuário: sempre 100 cotas (0..99)
   const totalCotas = 100;
@@ -109,7 +117,11 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json(result);
   } catch (e) {
     console.error("Erro ao reservar cotas", e);
-    return NextResponse.json({ error: "Erro ao reservar cotas" }, { status: 500 });
+    const msg =
+      e instanceof Error && e.message
+        ? e.message
+        : "Erro ao reservar cotas";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
