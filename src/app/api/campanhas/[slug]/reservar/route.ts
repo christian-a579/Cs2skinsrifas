@@ -59,7 +59,7 @@ export async function POST(request: Request, { params }: Params) {
 
       // Busca números disponíveis (0..99) que não estejam pagos nem reservados (não expirados)
       const availableRows = await tx.$queryRaw<Array<{ n: number }>>`
-        SELECT gs.n
+        SELECT (gs.n)::int AS n
         FROM generate_series(0, ${totalCotas - 1}) AS gs(n)
         LEFT JOIN "Titulo" t
           ON t."campanhaId" = ${campanha.id}
@@ -69,7 +69,7 @@ export async function POST(request: Request, { params }: Params) {
         WHERE t."id" IS NULL
       `;
 
-      const available = availableRows.map((r) => r.n);
+      const available = availableRows.map((r) => Number(r.n));
       if (available.length < quantidade) {
         return { ok: false as const, reason: "Sem cotas suficientes" };
       }
