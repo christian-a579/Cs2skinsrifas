@@ -13,14 +13,14 @@ const SLUG_CAMPANHA_ATIVA = "Usp - Kill Confirmed";
 const CAMPANHAS_EM_BREVE: Campanha[] = [
   {
     id: "em-breve-1",
-    slug: "baioneta - autotronic",
-    nome: "Baioneta | Autotronic (Testado em Campo)",
+    slug: "AWP - Redline",
+    nome: "AWP | Redline (Testado em Campo)",
     valorPremio: 420,
     precoTitulo: 4.2,
     totalTitulos: 100,
     titulosVendidos: 0,
     status: "em_breve",
-    imagemUrl: "/baioneta_autotronicc.png",
+    imagemUrl: "/awp_redline.png",
   },
   {
     id: "em-breve-2",
