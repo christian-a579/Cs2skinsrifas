@@ -30,6 +30,7 @@ export function Header() {
   const [historico, setHistorico] = useState<Participacao[]>([]);
   const [mostrarHistorico, setMostrarHistorico] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [bilhetesRefresh, setBilhetesRefresh] = useState(0);
 
   const loadUsuario = useCallback(() => {
@@ -97,6 +98,37 @@ export function Header() {
       loadHistorico();
     }
   }, [usuario, loadHistorico]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (!usuario?.cpf) {
+        setIsAdmin(false);
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/admin/me", {
+          method: "GET",
+          headers: { Authorization: `Bearer ${usuario.cpf}` },
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          if (!cancelled) setIsAdmin(false);
+          return;
+        }
+        const data = (await res.json()) as { isAdmin?: boolean };
+        if (!cancelled) setIsAdmin(Boolean(data?.isAdmin));
+      } catch {
+        if (!cancelled) setIsAdmin(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [usuario?.cpf]);
 
   // Ao abrir o modal, sempre busca a lista no banco pra evitar divergência do localStorage.
   useEffect(() => {
@@ -176,6 +208,15 @@ export function Header() {
             >
               Ganhadores
             </Link>
+
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="text-zinc-300 hover:text-white transition py-1.5 px-3 rounded-full border border-transparent min-h-[34px] box-border inline-flex items-center"
+              >
+                Admin
+              </Link>
+            )}
           </nav>
 
           {mobileMenuOpen ? (
@@ -204,6 +245,16 @@ export function Header() {
               >
                 Ganhadores
               </Link>
+
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="block text-zinc-300 py-2 hover:text-white transition"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Admin
+                </Link>
+              )}
             </div>
           ) : (
             <div className="flex sm:hidden items-center gap-2">
