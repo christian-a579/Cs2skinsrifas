@@ -195,8 +195,8 @@ export function CampanhasSection() {
       )}
 
       {selecionada && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="relative w-full max-w-md rounded-xl bg-card border border-zinc-800 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 overflow-y-auto">
+          <div className="relative w-full max-w-md rounded-xl bg-card border border-zinc-800 shadow-xl my-auto">
             {reservando && (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60">
                 <div className="h-10 w-10 rounded-full border-2 border-accent border-t-transparent animate-spin mb-3" />

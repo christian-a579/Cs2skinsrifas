@@ -59,8 +59,12 @@ export default async function CampanhaPage({
         <h2 className="text-lg font-semibold text-white mt-6 mb-2">
           Títulos Premiados
         </h2>
-        <p className="text-zinc-400 text-sm mb-4">
+        <p className="text-zinc-400 text-sm mb-2">
           Quanto mais títulos, mais chances de ganhar!!
+        </p>
+        <p className="text-zinc-400 text-sm mb-4">
+          Os números são de 0 a 99, sendo sorteados aleatoriamente. O resultado
+          do sorteio é divulgado no WhatsApp, Instagram e aqui no site.
         </p>
 
         {!isConcluida && (
