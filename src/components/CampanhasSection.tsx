@@ -37,6 +37,7 @@ export function CampanhasSection() {
   const [filtro, setFiltro] = useState<Filtro>("ativa");
   const [selecionada, setSelecionada] = useState<Campanha | null>(null);
   const [campanhas, setCampanhas] = useState<Campanha[]>([]);
+  const [carregandoCampanhas, setCarregandoCampanhas] = useState(true);
   const [reservando, setReservando] = useState(false);
   const [disponiveis, setDisponiveis] = useState<number>(100);
   const router = useRouter();
@@ -72,6 +73,7 @@ export function CampanhasSection() {
     let cancelled = false;
     const CACHE_KEY = "csgorifas:campanhas-cache";
     const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+    let cacheHit = false;
 
     // Mostra campanhas imediatamente se houver cache no localStorage (sem esperar o fetch).
     try {
@@ -87,11 +89,16 @@ export function CampanhasSection() {
           const dentroDoTTL = ts > 0 && Date.now() - ts < CACHE_TTL_MS;
           if (dentroDoTTL && Array.isArray(campanhas) && campanhas.length > 0) {
             if (!cancelled) setCampanhas(campanhas);
+            cacheHit = true;
           }
         }
       }
     } catch {
       // ignore cache read errors
+    }
+
+    if (cacheHit && !cancelled) {
+      setCarregandoCampanhas(false);
     }
 
     const load = async () => {
@@ -118,6 +125,8 @@ export function CampanhasSection() {
         }
       } catch {
         // ignore
+      } finally {
+        if (!cancelled) setCarregandoCampanhas(false);
       }
     };
     load();
@@ -184,7 +193,14 @@ export function CampanhasSection() {
         </button>
       </div>
 
-      {campanhasFiltradas.length === 0 && (
+      {carregandoCampanhas && campanhas.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <div className="h-10 w-10 rounded-full border-2 border-accent/60 border-t-transparent animate-spin" />
+          <p className="text-xs text-zinc-400">Carregando campanhas...</p>
+        </div>
+      )}
+
+      {!carregandoCampanhas && campanhasFiltradas.length === 0 && (
         <p className="text-zinc-400">
           Nenhuma campanha encontrada para esse filtro.
         </p>
