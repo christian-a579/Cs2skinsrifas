@@ -226,6 +226,11 @@ export function CampanhasSection() {
               </p>
             </div>
             <div className="px-5 py-4">
+              <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
+                Os números são de 0 a 99, sendo sorteados aleatoriamente. O
+                resultado do sorteio é divulgado no WhatsApp, Instagram e aqui no
+                site.
+              </p>
               <SeletorTitulos
                 precoTitulo={selecionada.precoTitulo}
                 pacotes={[1, 3, 5, 10, 15, 20]}
