@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { getPrisma } from "@/lib/prisma";
 
+// Garante que a rota /api/campanhas não seja servida por cache.
+// O frontend usa polling e precisa refletir novas campanhas imediatamente.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   const prisma = getPrisma();
   const campanhas = await prisma.campanha.findMany({
