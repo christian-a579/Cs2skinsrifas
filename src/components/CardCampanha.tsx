@@ -7,6 +7,13 @@ interface CardCampanhaProps {
 }
 
 export function CardCampanha({ campanha, onParticipar }: CardCampanhaProps) {
+  function telefoneFinal(telefone: string) {
+    const digits = telefone.replace(/\D/g, "");
+    if (!digits) return "—";
+    const last4 = digits.slice(-4);
+    return `...${last4}`;
+  }
+
   const percentual =
     campanha.totalTitulos > 0
       ? Math.min(
@@ -77,6 +84,26 @@ export function CardCampanha({ campanha, onParticipar }: CardCampanhaProps) {
                 R$ {campanha.valorPremio.toFixed(2).replace(".", ",")}
               </span>
             </p>
+
+            {isConcluida && campanha.ganhador && (
+              <div className="pt-1 text-[11px] text-zinc-400 space-y-1">
+                <p className="text-zinc-200 font-medium">
+                  Vencedor: {campanha.ganhador.nome}
+                </p>
+                <p>
+                  Telefone:{" "}
+                  <span className="text-accent font-semibold">
+                    {telefoneFinal(campanha.ganhador.telefone)}
+                  </span>
+                </p>
+                <p>
+                  Numero da sorte:{" "}
+                  <span className="text-accent font-semibold">
+                    #{campanha.ganhador.numeroSorte.toString().padStart(2, "0")}
+                  </span>
+                </p>
+              </div>
+            )}
           </>
         )}
         <button

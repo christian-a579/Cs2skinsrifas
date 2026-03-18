@@ -7,18 +7,22 @@ function normalizeCpf(input: string) {
 
 function isAdminRequest(request: Request) {
   const authorization = request.headers.get("authorization") || "";
-  const auth = authorization || "";
-  const provided = auth.toLowerCase().startsWith("bearer ")
-    ? auth.slice(7).trim()
+  const provided = authorization.toLowerCase().startsWith("bearer ")
+    ? authorization.slice(7).trim()
     : "";
   const adminCpf = normalizeCpf(process.env.ADMIN_CPF || "");
-  return normalizeCpf(provided) !== "" && normalizeCpf(provided) === adminCpf;
+  return (
+    normalizeCpf(provided) !== "" && normalizeCpf(provided) === adminCpf
+  );
 }
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type Body = { campanhaSlug: string };
+type Body = {
+  campanhaSlug: string;
+  numeroSorte: number; // 0..99
+};
 
 export async function POST(request: Request) {
   if (!isAdminRequest(request)) {
@@ -27,10 +31,23 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => null)) as Body | null;
   const campanhaSlug = body?.campanhaSlug;
+  const numeroSorte = body?.numeroSorte;
 
   if (!campanhaSlug || typeof campanhaSlug !== "string") {
     return NextResponse.json(
       { error: "campanhaSlug é obrigatório" },
+      { status: 400 },
+    );
+  }
+
+  if (
+    typeof numeroSorte !== "number" ||
+    !Number.isInteger(numeroSorte) ||
+    numeroSorte < 0 ||
+    numeroSorte > 99
+  ) {
+    return NextResponse.json(
+      { error: "numeroSorte inválido (use 0..99)" },
       { status: 400 },
     );
   }
@@ -58,10 +75,10 @@ export async function POST(request: Request) {
       };
     }
 
-    // Evita duplicar ganhador caso seja chamado duas vezes
     const existing = await tx.ganhador.findUnique({
       where: { campanhaId: campanha.id },
     });
+
     if (existing) {
       return {
         ok: false as const,
@@ -70,26 +87,30 @@ export async function POST(request: Request) {
       };
     }
 
-    const titulosPagos = await tx.titulo.findMany({
-      where: { campanhaId: campanha.id, status: "pago" },
-      select: { id: true, numeroSorte: true, usuarioId: true },
+    const tituloPago = await tx.titulo.findFirst({
+      where: {
+        campanhaId: campanha.id,
+        numeroSorte,
+        status: "pago",
+      },
+      include: {
+        usuario: { select: { id: true, nome: true, telefone: true } },
+      },
     });
 
-    if (titulosPagos.length === 0) {
+    if (!tituloPago) {
       return {
         ok: false as const,
-        status: 409,
-        error: "Não há títulos pagos disponíveis para sortear",
+        status: 404,
+        error: "Título pago não encontrado para esse número",
       };
     }
-
-    const chosen = titulosPagos[Math.floor(Math.random() * titulosPagos.length)];
 
     const ganhador = await tx.ganhador.create({
       data: {
         campanhaId: campanha.id,
-        usuarioId: chosen.usuarioId,
-        tituloId: chosen.id,
+        usuarioId: tituloPago.usuarioId,
+        tituloId: tituloPago.id,
         dataPremiacao: new Date(),
       },
       include: {
@@ -109,16 +130,15 @@ export async function POST(request: Request) {
 
     return {
       ok: true as const,
-      numeroSorte: ganhador.titulo.numeroSorte,
       ganhador: {
         id: ganhador.id,
         nome: ganhador.usuario.nome,
         telefone: ganhador.usuario.telefone,
         premio: ganhador.campanha.nome,
         campanhaSlug: ganhador.campanha.slug,
+        numeroSorte: ganhador.titulo.numeroSorte,
         dataPremiacao: ganhador.dataPremiacao.toISOString(),
       },
-      campanhaSlug: campanha.slug,
     };
   });
 
@@ -126,10 +146,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  return NextResponse.json({
-    numeroSorte: result.numeroSorte,
-    ganhador: result.ganhador,
-    campanhaSlug: result.campanhaSlug,
-  });
+  return NextResponse.json(result.ganhador);
 }
 

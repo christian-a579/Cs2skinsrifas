@@ -4,6 +4,12 @@ import type { Campanha } from "@/lib/types";
 
 const PACOTES = [1, 3, 5, 10, 15, 20];
 
+function telefoneFinal(telefone: string) {
+  const digits = telefone.replace(/\D/g, "");
+  if (!digits) return "—";
+  return `...${digits.slice(-4)}`;
+}
+
 async function fetchCampanha(slug: string): Promise<Campanha | null> {
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/campanhas/${slug}`,
@@ -77,6 +83,22 @@ export default async function CampanhaPage({
         {isConcluida && (
           <div className="py-4 text-zinc-500 text-center">
             Campanha encerrada em {campanha.dataConclusao}
+            {campanha.ganhador && (
+              <div className="mt-3 text-sm text-zinc-400 space-y-1">
+                <p>
+                  Vencedor:{" "}
+                  <span className="text-white font-medium">
+                    {campanha.ganhador.nome}
+                  </span>
+                </p>
+                <p>
+                  Telefone:{" "}
+                  <span className="text-accent font-semibold">
+                    {telefoneFinal(campanha.ganhador.telefone)}
+                  </span>
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

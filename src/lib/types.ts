@@ -13,6 +13,11 @@ export interface Campanha {
   imagemUrl?: string;
   displayScale?: number;
   displayOffsetY?: number;
+  ganhador?: {
+    nome: string;
+    telefone: string;
+    numeroSorte: number;
+  };
 }
 
 export interface Ganhador {

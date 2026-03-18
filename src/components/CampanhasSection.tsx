@@ -182,6 +182,17 @@ export function CampanhasSection() {
         </button>
         <button
           type="button"
+          onClick={() => setFiltro("concluida")}
+          className={`px-4 py-2 rounded-full text-sm font-medium border transition ${
+            filtro === "concluida"
+              ? "bg-accent text-black border-accent"
+              : "border-zinc-700 text-zinc-300 hover:border-zinc-500"
+          }`}
+        >
+          Concluídas
+        </button>
+        <button
+          type="button"
           onClick={() => setFiltro("em_breve")}
           className={`px-4 py-2 rounded-full text-sm font-medium border transition ${
             filtro === "em_breve"

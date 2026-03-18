@@ -12,6 +12,14 @@ export async function GET() {
     orderBy: {
       createdAt: "desc",
     },
+    include: {
+      ganhador: {
+        include: {
+          usuario: { select: { nome: true, telefone: true } },
+          titulo: { select: { numeroSorte: true } },
+        },
+      },
+    },
   });
 
   const data = campanhas.map((c) => ({
@@ -30,6 +38,14 @@ export async function GET() {
         }).format(c.dataConclusao)
       : undefined,
     imagemUrl: c.imagemUrl ?? undefined,
+    ganhador:
+      c.status === "concluida" && c.ganhador
+        ? {
+            nome: c.ganhador.usuario.nome,
+            telefone: c.ganhador.usuario.telefone,
+            numeroSorte: c.ganhador.titulo.numeroSorte,
+          }
+        : undefined,
   }));
 
   return NextResponse.json(data);

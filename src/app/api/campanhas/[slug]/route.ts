@@ -16,6 +16,14 @@ export async function GET(_request: Request, { params }: Params) {
 
   const campanha = await prisma.campanha.findUnique({
     where: { slug },
+    include: {
+      ganhador: {
+        include: {
+          usuario: { select: { nome: true, telefone: true } },
+          titulo: { select: { numeroSorte: true } },
+        },
+      },
+    },
   });
 
   if (!campanha) {
@@ -38,6 +46,14 @@ export async function GET(_request: Request, { params }: Params) {
         }).format(campanha.dataConclusao)
       : undefined,
     imagemUrl: campanha.imagemUrl ?? undefined,
+    ganhador:
+      campanha.status === "concluida" && campanha.ganhador
+        ? {
+            nome: campanha.ganhador.usuario.nome,
+            telefone: campanha.ganhador.usuario.telefone,
+            numeroSorte: campanha.ganhador.titulo.numeroSorte,
+          }
+        : undefined,
   };
 
   return NextResponse.json(data);

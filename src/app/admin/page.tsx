@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Campanha } from "@/lib/types";
-import { Roulette0to99 } from "@/components/Roulette0to99";
 
 type UsuarioLocal = {
   cpf?: string;
@@ -32,11 +31,6 @@ type SortResponse = {
   campanhaSlug: string;
 };
 
-type RouletteState = {
-  spinning: boolean;
-  targetNumber: number | null;
-};
-
 export default function AdminPage() {
   const router = useRouter();
 
@@ -47,9 +41,18 @@ export default function AdminPage() {
 
   const [campanhas, setCampanhas] = useState<Campanha[]>([]);
   const [ganhadores, setGanhadores] = useState<GanhadorRow[]>([]);
+  const [winnerModalOpen, setWinnerModalOpen] = useState(false);
+  const [winnerModalInfo, setWinnerModalInfo] = useState<{
+    nome: string;
+    telefone: string;
+    numeroSorte: number;
+  } | null>(null);
 
-  const [rouletteByCampanhaId, setRouletteByCampanhaId] = useState<
-    Record<string, RouletteState>
+  const [manualNumeroByCampanhaId, setManualNumeroByCampanhaId] = useState<
+    Record<string, string>
+  >({});
+  const [registrandoByCampanhaId, setRegistrandoByCampanhaId] = useState<
+    Record<string, boolean>
   >({});
 
   const user = useMemo<UsuarioLocal>(() => {
@@ -136,87 +139,79 @@ export default function AdminPage() {
 
   const rootCpf = user.cpf || "";
 
-  async function sortear(campanha: Campanha) {
+  async function registrarGanhador(campanha: Campanha, numeroSorte: number) {
     if (!isAdmin) return;
 
-    setRouletteByCampanhaId((prev) => ({
-      ...prev,
-      [campanha.id]: { spinning: true, targetNumber: null },
-    }));
+    setWinnerModalOpen(false);
+    setWinnerModalInfo(null);
+    setRegistrandoByCampanhaId((prev) => ({ ...prev, [campanha.id]: true }));
 
     try {
-      const res = await fetch("/api/admin/sortear", {
+      const res = await fetch("/api/admin/registrar-ganhador", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${rootCpf}`,
         },
-        body: JSON.stringify({ campanhaSlug: campanha.slug }),
+        body: JSON.stringify({ campanhaSlug: campanha.slug, numeroSorte }),
       });
 
       const data = (await res.json().catch(() => null)) as
-        | SortResponse
+        | { nome: string; telefone: string; numeroSorte: number }
         | null
         | { error?: string };
 
       if (!res.ok || !data || "error" in data) {
-        alert((data as any)?.error || "Falha ao sortear");
-        setRouletteByCampanhaId((prev) => ({
-          ...prev,
-          [campanha.id]: { spinning: false, targetNumber: null },
-        }));
+        alert((data as any)?.error || "Falha ao registrar ganhador");
         return;
       }
 
-      const target = (data as SortResponse).numeroSorte;
-      setRouletteByCampanhaId((prev) => ({
-        ...prev,
-        [campanha.id]: { spinning: true, targetNumber: target },
-      }));
-
-      // Atualiza lista depois da animacao (evita ver estado antes)
-      setTimeout(async () => {
-        try {
-          const cpf = rootCpf || "";
-          const ganhRes = await fetch("/api/admin/ganhadores", {
-            method: "GET",
-            headers: { Authorization: `Bearer ${cpf}` },
-            cache: "no-store",
-          });
-          const ganhData = (await ganhRes.json()) as GanhadorRow[];
-          setGanhadores(Array.isArray(ganhData) ? ganhData : []);
-
-          const campRes = await fetch("/api/admin/campanhas-ativas", {
-            method: "GET",
-            headers: { Authorization: `Bearer ${cpf}` },
-            cache: "no-store",
-          });
-          const campData = (await campRes.json()) as any[];
-          setCampanhas(
-            (Array.isArray(campData) ? campData : []).map((c) => ({
-              id: String(c.id),
-              slug: String(c.slug),
-              nome: String(c.nome),
-              valorPremio: Number(c.valorPremio),
-              precoTitulo: Number(c.precoTitulo),
-              totalTitulos: Number(c.totalTitulos),
-              titulosVendidos: Number(c.titulosVendidos),
-              status: (c.status ?? "ativa") as any,
-              imagemUrl: c.imagemUrl ?? undefined,
-              dataConclusao: c.dataConclusao
-                ? new Date(c.dataConclusao)
-                : undefined,
-            })) as Campanha[],
-          );
-        } catch {
-          // ignore
-        }
-      }, 3600);
+      setWinnerModalInfo({
+        nome: (data as any).nome || "",
+        telefone: (data as any).telefone || "",
+        numeroSorte: (data as any).numeroSorte,
+      });
+      setWinnerModalOpen(true);
     } catch {
-      setRouletteByCampanhaId((prev) => ({
-        ...prev,
-        [campanha.id]: { spinning: false, targetNumber: null },
-      }));
+      alert("Erro ao registrar ganhador");
+    } finally {
+      setRegistrandoByCampanhaId((prev) => ({ ...prev, [campanha.id]: false }));
+      // Atualiza listas
+      try {
+        const cpf = rootCpf || "";
+        const [ganhRes, campRes] = await Promise.all([
+          fetch("/api/admin/ganhadores", {
+            method: "GET",
+            headers: { Authorization: `Bearer ${cpf}` },
+            cache: "no-store",
+          }),
+          fetch("/api/admin/campanhas-ativas", {
+            method: "GET",
+            headers: { Authorization: `Bearer ${cpf}` },
+            cache: "no-store",
+          }),
+        ]);
+        const ganhData = (await ganhRes.json()) as GanhadorRow[];
+        const campData = (await campRes.json()) as any[];
+
+        setGanhadores(Array.isArray(ganhData) ? ganhData : []);
+        setCampanhas(
+          (Array.isArray(campData) ? campData : []).map((c) => ({
+            id: String(c.id),
+            slug: String(c.slug),
+            nome: String(c.nome),
+            valorPremio: Number(c.valorPremio),
+            precoTitulo: Number(c.precoTitulo),
+            totalTitulos: Number(c.totalTitulos),
+            titulosVendidos: Number(c.titulosVendidos),
+            status: (c.status ?? "ativa") as any,
+            imagemUrl: c.imagemUrl ?? undefined,
+            dataConclusao: c.dataConclusao ? new Date(c.dataConclusao) : undefined,
+          })) as Campanha[],
+        );
+      } catch {
+        // ignore
+      }
     }
   }
 
@@ -274,10 +269,6 @@ export default function AdminPage() {
             </p>
           ) : (
             campanhas.map((campanha) => {
-              const state = rouletteByCampanhaId[campanha.id] ?? {
-                spinning: false,
-                targetNumber: null,
-              };
               return (
                 <div
                   key={campanha.id}
@@ -307,45 +298,62 @@ export default function AdminPage() {
                       </p>
                     </div>
 
-                    <div className="text-right">
-                      <button
-                        type="button"
-                        onClick={() => sortear(campanha)}
-                        disabled={state.spinning}
-                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${
-                          state.spinning
-                            ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
-                            : "bg-accent text-black hover:bg-yellow-500"
-                        }`}
-                      >
-                        {state.spinning ? "Sortear..." : "Sortear"}
-                      </button>
+                    <div className="text-right space-y-2">
+                      <div className="flex items-center gap-2 justify-end">
+                        <input
+                          type="number"
+                          min={0}
+                          max={99}
+                          step={1}
+                          inputMode="numeric"
+                          placeholder="Ex.: 86"
+                          value={
+                            manualNumeroByCampanhaId[campanha.id] ?? ""
+                          }
+                          onChange={(e) =>
+                            setManualNumeroByCampanhaId((prev) => ({
+                              ...prev,
+                              [campanha.id]: e.target.value,
+                            }))
+                          }
+                          className="w-24 rounded-md border border-zinc-800 bg-zinc-950 text-zinc-200 px-2 py-1 text-sm outline-none focus:border-accent"
+                          aria-label={`Numero sorteado da rifa ${campanha.slug}`}
+                        />
+                        <button
+                          type="button"
+                          disabled={Boolean(
+                            registrandoByCampanhaId[campanha.id],
+                          )}
+                          onClick={() => {
+                            const raw =
+                              manualNumeroByCampanhaId[campanha.id];
+                            const n = Number(raw);
+                            if (
+                              raw === undefined ||
+                              raw === "" ||
+                              !Number.isInteger(n) ||
+                              n < 0 ||
+                              n > 99
+                            ) {
+                              alert("Informe um numero inteiro entre 0 e 99.");
+                              return;
+                            }
+                            registrarGanhador(campanha, n);
+                          }}
+                          className={`px-3 py-2 rounded-lg font-semibold text-sm transition ${
+                            registrandoByCampanhaId[campanha.id]
+                              ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
+                              : "bg-accent text-black hover:bg-yellow-500"
+                          }`}
+                        >
+                          Registrar
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-zinc-500">
+                        Digite o numero 0..99 (que esteja com titulo <span className="text-accent">pago</span>).
+                      </p>
                     </div>
                   </div>
-
-                  <Roulette0to99
-                    spinning={state.spinning}
-                    targetNumber={state.targetNumber}
-                    onFinished={() => {
-                      // marca que terminou para desabilitar o botao
-                      setRouletteByCampanhaId((prev) => ({
-                        ...prev,
-                        [campanha.id]: {
-                          spinning: false,
-                          targetNumber: state.targetNumber,
-                        },
-                      }));
-                    }}
-                  />
-
-                  {typeof state.targetNumber === "number" && (
-                    <p className="text-xs text-zinc-400 mt-3">
-                      Resultado:{" "}
-                      <span className="text-accent font-semibold">
-                        #{state.targetNumber.toString().padStart(2, "0")}
-                      </span>
-                    </p>
-                  )}
                 </div>
               );
             })
@@ -380,6 +388,57 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {winnerModalOpen && winnerModalInfo && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4">
+          <div className="relative w-full max-w-md rounded-xl bg-card border border-zinc-800 shadow-xl p-6">
+            <button
+              type="button"
+              onClick={() => {
+                setWinnerModalOpen(false);
+                setWinnerModalInfo(null);
+              }}
+              className="absolute right-3 top-3 text-zinc-500 hover:text-white text-xl leading-none"
+              aria-label="Fechar modal do ganhador"
+            >
+              ×
+            </button>
+
+            <h2 className="text-xl font-bold text-white mb-2">
+              Ganhos!
+            </h2>
+            <p className="text-sm text-zinc-400 mb-6">
+              O ganhador foi sorteado com sucesso.
+            </p>
+
+            <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-4 space-y-2">
+              <p className="text-zinc-400 text-xs">Ganhador</p>
+              <p className="text-white font-semibold">{winnerModalInfo.nome}</p>
+
+              <p className="text-zinc-400 text-xs mt-3">Telefone</p>
+              <p className="text-white">{winnerModalInfo.telefone}</p>
+
+              <p className="text-zinc-400 text-xs mt-3">Número sorteado</p>
+              <p className="text-accent font-semibold">
+                #{winnerModalInfo.numeroSorte.toString().padStart(2, "0")}
+              </p>
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setWinnerModalOpen(false);
+                  setWinnerModalInfo(null);
+                }}
+                className="px-4 py-2 rounded-lg bg-accent text-black font-semibold hover:bg-yellow-500 transition"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
