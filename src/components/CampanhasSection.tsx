@@ -8,8 +8,6 @@ import type { Campanha } from "@/lib/types";
 
 type Filtro = "todas" | "ativa" | "concluida" | "em_breve";
 
-const SLUG_CAMPANHA_ATIVA = "Usp - Kill Confirmed";
-
 const CAMPANHAS_EM_BREVE: Campanha[] = [
   {
     id: "em-breve-1",
@@ -102,8 +100,7 @@ export function CampanhasSection() {
 
   const campanhasFiltradas = useMemo(() => {
     if (filtro === "em_breve") return CAMPANHAS_EM_BREVE;
-    const base = campanhas.filter((c) => c.slug === SLUG_CAMPANHA_ATIVA);
-    return base.filter((c) =>
+    return campanhas.filter((c) =>
       filtro === "todas" ? true : c.status === filtro,
     );
   }, [campanhas, filtro]);
