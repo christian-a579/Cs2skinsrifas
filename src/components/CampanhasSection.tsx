@@ -74,7 +74,10 @@ export function CampanhasSection() {
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await fetch("/api/campanhas", { cache: "no-store" });
+        const res = await fetch(
+          `/api/campanhas?_t=${Date.now()}`,
+          { cache: "no-store", headers: { Pragma: "no-cache" } },
+        );
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as Campanha[];
         if (!cancelled && Array.isArray(data)) {
@@ -85,7 +88,7 @@ export function CampanhasSection() {
       }
     };
     load();
-    const interval = setInterval(load, 30_000); // atualiza a cada 30s
+    const interval = setInterval(load, 10_000); // atualiza a cada 10s
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") load();
     };

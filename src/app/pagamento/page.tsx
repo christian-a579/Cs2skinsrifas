@@ -430,6 +430,16 @@ export default function PagamentoPage() {
             </p>
           )}
         </div>
+
+        {statusReserva === "paga" && (
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="w-full py-3 rounded-lg bg-accent text-black font-semibold hover:bg-yellow-500 transition"
+          >
+            Voltar às campanhas
+          </button>
+        )}
       </div>
     </div>
   );
