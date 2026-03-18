@@ -70,6 +70,30 @@ export function CampanhasSection() {
 
   useEffect(() => {
     let cancelled = false;
+    const CACHE_KEY = "csgorifas:campanhas-cache";
+    const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+
+    // Mostra campanhas imediatamente se houver cache no localStorage (sem esperar o fetch).
+    try {
+      if (typeof window !== "undefined") {
+        const raw = window.localStorage.getItem(CACHE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw) as {
+            ts?: number;
+            campanhas?: Campanha[];
+          };
+          const ts = typeof parsed?.ts === "number" ? parsed.ts : 0;
+          const campanhas = parsed?.campanhas;
+          const dentroDoTTL = ts > 0 && Date.now() - ts < CACHE_TTL_MS;
+          if (dentroDoTTL && Array.isArray(campanhas) && campanhas.length > 0) {
+            if (!cancelled) setCampanhas(campanhas);
+          }
+        }
+      }
+    } catch {
+      // ignore cache read errors
+    }
+
     const load = async () => {
       try {
         const res = await fetch(
@@ -80,6 +104,17 @@ export function CampanhasSection() {
         const data = (await res.json()) as Campanha[];
         if (!cancelled && Array.isArray(data)) {
           setCampanhas(data);
+          // Atualiza cache para render rápido na próxima visita.
+          try {
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem(
+                CACHE_KEY,
+                JSON.stringify({ ts: Date.now(), campanhas: data }),
+              );
+            }
+          } catch {
+            // ignore cache write errors
+          }
         }
       } catch {
         // ignore
