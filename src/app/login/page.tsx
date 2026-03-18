@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [sucesso, setSucesso] = useState(false);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -37,8 +38,8 @@ export default function LoginPage() {
       return;
     }
 
-    if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
-      setErro("Telefone inválido. Use DDD + número.");
+    if (telefoneLimpo.length !== 11) {
+      setErro("Telefone inválido. Use DDD + número (11 dígitos).");
       return;
     }
 
@@ -77,7 +78,8 @@ export default function LoginPage() {
       localStorage.setItem("csgorifas:user", JSON.stringify(user));
       window.dispatchEvent(new Event("csgorifas:user:updated"));
 
-      router.push("/");
+      setSucesso(true);
+      setTimeout(() => router.push("/"), 1500);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro inesperado.");
     } finally {
@@ -86,7 +88,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto bg-card border border-zinc-800 rounded-xl p-6">
+    <div className="max-w-md mx-auto bg-card border border-zinc-800 rounded-xl p-6 relative">
+      {sucesso && (
+        <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/80 backdrop-blur-sm z-10">
+          <div className="flex flex-col items-center gap-2 rounded-lg border border-accent/60 bg-zinc-900/95 px-6 py-4 shadow-lg shadow-accent/20">
+            <span className="text-3xl" aria-hidden>✓</span>
+            <p className="text-lg font-semibold text-accent">Cadastro Efetuado</p>
+            <p className="text-xs text-zinc-400">Redirecionando...</p>
+          </div>
+        </div>
+      )}
       <h1 className="text-2xl font-bold text-white mb-2">Cadastro</h1>
       <p className="text-sm text-zinc-400 mb-6">
         Informe nome, sobrenome, CPF, telefone e e-mail para criar sua conta.
@@ -165,10 +176,10 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          disabled={carregando}
+          disabled={carregando || sucesso}
           className="w-full py-2.5 rounded-lg bg-accent text-black font-semibold text-sm hover:bg-yellow-500 transition disabled:opacity-70"
         >
-          {carregando ? "Entrando..." : "Continuar"}
+          {carregando ? "Entrando..." : sucesso ? "Cadastro Efetuado!" : "Continuar"}
         </button>
       </form>
     </div>

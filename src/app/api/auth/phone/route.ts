@@ -26,9 +26,9 @@ export async function POST(request: Request) {
     }
 
     const telefoneLimpo = telefone.replace(/\D/g, "");
-    if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
+    if (telefoneLimpo.length !== 11) {
       return NextResponse.json(
-        { message: "Telefone inválido." },
+        { message: "Telefone inválido. Use DDD + número (11 dígitos)." },
         { status: 400 },
       );
     }

@@ -21,8 +21,8 @@ export default function EntrarPage() {
       return;
     }
 
-    if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
-      setErro("Telefone inválido. Use DDD + número.");
+    if (telefoneLimpo.length !== 11) {
+      setErro("Telefone inválido. Use DDD + número (11 dígitos).");
       return;
     }
 
