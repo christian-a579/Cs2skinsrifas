@@ -32,6 +32,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [bilhetesRefresh, setBilhetesRefresh] = useState(0);
+  const [carregandoHistorico, setCarregandoHistorico] = useState(false);
 
   const loadUsuario = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -82,11 +83,11 @@ export function Header() {
         const data = (await res.json()) as Participacao[];
         setHistorico(Array.isArray(data) ? data : []);
       } catch {
-        // Fallback para localStorage (caso API falhe)
-        loadHistorico();
+        // Nao reutilizamos localStorage para evitar mostrar historico de outro usuario.
+        setHistorico([]);
       }
     },
-    [loadHistorico],
+    [],
   );
 
   useEffect(() => {
@@ -94,10 +95,9 @@ export function Header() {
   }, [pathname, loadUsuario]);
 
   useEffect(() => {
-    if (usuario) {
-      loadHistorico();
-    }
-  }, [usuario, loadHistorico]);
+    // Evita flash inicial de "meus bilhetes" de outro usuario (localStorage nao e por usuario).
+    setHistorico([]);
+  }, [usuario?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -133,7 +133,8 @@ export function Header() {
   // Ao abrir o modal, sempre busca a lista no banco pra evitar divergência do localStorage.
   useEffect(() => {
     if (!mostrarHistorico || !usuario) return;
-    loadHistoricoDB(usuario.id);
+    setCarregandoHistorico(true);
+    loadHistoricoDB(usuario.id).finally(() => setCarregandoHistorico(false));
   }, [mostrarHistorico, usuario, loadHistoricoDB, bilhetesRefresh]);
 
   useEffect(() => {
@@ -143,17 +144,12 @@ export function Header() {
       if (event.key === "csgorifas:user") {
         loadUsuario();
       }
-      if (event.key === "csgorifas:historico") {
-        loadHistorico();
-      }
     };
 
     const onUpdate = () => loadUsuario();
     const onHistoricoUpdate = () => {
       if (mostrarHistorico && usuario) {
         setBilhetesRefresh((v) => v + 1);
-      } else {
-        loadHistorico();
       }
     };
 
@@ -395,7 +391,12 @@ export function Header() {
               </button>
             </div>
             <div className="p-5 overflow-auto max-h-[calc(90vh-96px)]">
-              {historico.length === 0 ? (
+              {carregandoHistorico ? (
+                <div className="flex items-center gap-3 text-zinc-400 text-sm">
+                  <div className="h-8 w-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+                  Carregando bilhetes...
+                </div>
+              ) : historico.length === 0 ? (
                 <p className="text-zinc-400 text-sm">
                   Nenhuma participação registrada ainda.
                 </p>
